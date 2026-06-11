@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SiteLog — Daily Report Generator</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a2540">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SiteLog">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --ink:       #0f1923;
+    --steel:     #1e3a5f;
+    --blueprint: #0a2540;
+    --amber:     #f5a623;
+    --amber-dim: #c47f0a;
+    --grid:      #162d4a;
+    --surface:   #132136;
+    --card:      #1a2f4a;
+    --muted:     #4d7298;
+    --light:     #8aaec8;
+    --white:     #e8f0f8;
+    --danger:    #e05252;
+    --success:   #3dba7c;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--blueprint);
+    color: var(--white);
+    font-family: var(--sans);
+    min-height: 100vh;
+    background-image:
+      linear-gradient(rgba(26,47,74,0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26,47,74,0.5) 1px, transparent 1px);
+    background-size: 32px 32px;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--grid);
+    padding: 14px 20px;
+    padding-top: calc(14px + env(safe-area-inset-top));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,37,64,0.92);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    gap: 10px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.04em;
+  }
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--amber);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--blueprint);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .logo span { color: var(--amber); }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .date-badge {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--light);
+    background: var(--surface);
+    border: 1px solid var(--grid);
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  /* Install button */
+  #btn-install {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: var(--amber);
+    color: var(--blueprint);
+    border: none;
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #btn-install.visible { display: flex; }
+
+  /* ── Offline banner ── */
+  #offline-banner {
+    display: none;
+    background: var(--danger);
+    color: #fff;
+    text-align: center;
+    padding: 6px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+  }
+  #offline-banner.show { display: block; }
+
+  /* ── Main layout ── */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 28px 16px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Panel labels ── */
+  .panel-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── GPS + Weather strip ── */
+  .location-strip {
+    background: var(--surface);
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn-locate {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: var(--card);
+    border: 1px solid var(--grid);
+    border-radius: 5px;
+    color: var(--light);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-locate:hover { border-color: var(--amber); color: var(--amber); }
+  .btn-locate.active { border-color: var(--success); color: var(--success); }
+  .location-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .gps-coords {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .gps-coords.got { color: var(--success); }
+  .weather-live {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .wx-chip {
+    background: var(--card);
+    border: 1px solid var(--grid);
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--light);
+  }
+
+  /* ── Recorder card ── */
+  .recorder-card {
+    background: var(--surface);
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    padding: 28px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .rec-title {
+    font-size: 0.95rem;
+    color: var(--light);
+    text-align: center;
+  }
+  .rec-title strong { color: var(--white); }
+
+  .btn-record {
+    position: relative;
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    border: 3px solid var(--amber);
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    outline: none;
+  }
+  .btn-record:hover { background: rgba(245,166,35,0.08); transform: scale(1.05); }
+  .btn-record.recording { border-color: var(--danger); animation: pulse-ring 1.4s ease-out infinite; }
+  .btn-record.recording .rec-dot { background: var(--danger); }
+  .rec-dot {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--amber);
+    transition: all 0.2s;
+  }
+  .btn-record.recording .rec-dot { border-radius: 5px; width: 20px; height: 20px; }
+  @keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(224,82,82,0.5); }
+    70%  { box-shadow: 0 0 0 18px rgba(224,82,82,0); }
+    100% { box-shadow: 0 0 0 0 rgba(224,82,82,0); }
+  }
+
+  .waveform-wrap {
+    width: 100%; height: 40px;
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+  }
+  .waveform-wrap .bar {
+    width: 4px; border-radius: 2px;
+    background: var(--muted); height: 6px;
+    transition: height 0.1s ease;
+  }
+  .waveform-wrap.active .bar { background: var(--amber); animation: wave-bar 0.8s ease-in-out infinite; }
+  .waveform-wrap.active .bar:nth-child(1)  { animation-delay: 0s; }
+  .waveform-wrap.active .bar:nth-child(2)  { animation-delay: 0.1s; }
+  .waveform-wrap.active .bar:nth-child(3)  { animation-delay: 0.2s; }
+  .waveform-wrap.active .bar:nth-child(4)  { animation-delay: 0.3s; }
+  .waveform-wrap.active .bar:nth-child(5)  { animation-delay: 0.15s; }
+  .waveform-wrap.active .bar:nth-child(6)  { animation-delay: 0.25s; }
+  .waveform-wrap.active .bar:nth-child(7)  { animation-delay: 0.05s; }
+  .waveform-wrap.active .bar:nth-child(8)  { animation-delay: 0.35s; }
+  .waveform-wrap.active .bar:nth-child(9)  { animation-delay: 0.2s; }
+  .waveform-wrap.active .bar:nth-child(10) { animation-delay: 0.1s; }
+  .waveform-wrap.active .bar:nth-child(11) { animation-delay: 0.3s; }
+  .waveform-wrap.active .bar:nth-child(12) { animation-delay: 0.0s; }
+  @keyframes wave-bar { 0%, 100% { height: 6px; } 50% { height: 28px; } }
+
+  .rec-status {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    min-height: 18px;
+    text-align: center;
+  }
+  .rec-status.recording { color: var(--danger); }
+  .rec-status.processing { color: var(--amber); }
+  .rec-status.done { color: var(--success); }
+
+  .rec-timer {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    color: var(--white);
+    letter-spacing: 0.08em;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .rec-timer.visible { opacity: 1; }
+
+  /* ── Camera section ── */
+  .camera-panel {
+    background: var(--surface);
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .camera-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-cam {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 16px;
+    background: var(--card);
+    border: 1px solid var(--grid);
+    border-radius: 5px;
+    color: var(--light);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-cam:hover { border-color: var(--amber); color: var(--amber); }
+  /* Hidden file input */
+  #photo-input { display: none; }
+
+  /* Photo grid */
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .photo-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--grid);
+    background: var(--card);
+  }
+  .photo-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .photo-thumb .remove-photo {
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 20px; height: 20px;
+    background: rgba(224,82,82,0.85);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .photo-count {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* Camera preview modal */
+  .cam-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .cam-modal.open { display: flex; }
+  .cam-modal video {
+    width: 100%;
+    max-height: calc(100vh - 100px);
+    object-fit: cover;
+  }
+  .cam-modal-controls {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  }
+  .btn-shutter {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-shutter:active { transform: scale(0.9); background: rgba(255,255,255,0.5); }
+  .btn-shutter-inner {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: #fff;
+  }
+  .btn-cam-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    top: calc(16px + env(safe-area-inset-top));
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-flip-cam {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  canvas#snap-canvas { display: none; }
+
+  /* ── Transcript ── */
+  .transcript-box {
+    background: var(--surface);
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    padding: 16px 18px;
+    display: none;
+  }
+  .transcript-box textarea {
+    width: 100%;
+    min-height: 80px;
+    background: var(--card);
+    border: 1px solid var(--grid);
+    border-radius: 5px;
+    color: var(--white);
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    padding: 10px;
+    resize: vertical;
+    outline: none;
+    margin-top: 8px;
+  }
+  .transcript-box textarea:focus { border-color: var(--amber); }
+
+  .btn-generate {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%;
+    padding: 13px;
+    margin-top: 12px;
+    background: var(--amber);
+    color: var(--blueprint);
+    border: none;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-generate:hover { background: #f7b84a; transform: translateY(-1px); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Progress steps */
+  .progress-bar { display: flex; align-items: center; gap: 0; width: 100%; margin-top: 12px; }
+  .step {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 0.68rem; color: var(--muted); flex: 1;
+  }
+  .step.active { color: var(--amber); }
+  .step.done   { color: var(--success); }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .step.active .step-dot { background: var(--amber); }
+  .step.done   .step-dot { background: var(--success); }
+  .step-line { flex: 1; height: 1px; background: var(--grid); margin: 0 4px; }
+  .step-line.done { background: var(--success); }
+
+  /* ── Report ── */
+  #report-section { display: none; }
+  .report-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap;
+  }
+  .report-title-area { flex: 1; }
+  .report-eyebrow {
+    font-family: var(--mono); font-size: 0.68rem;
+    letter-spacing: 0.14em; color: var(--amber); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .report-title { font-size: 1.4rem; font-weight: 700; color: var(--white); }
+  .report-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .meta-tag {
+    font-family: var(--mono); font-size: 0.7rem;
+    background: var(--card); border: 1px solid var(--grid);
+    color: var(--light); padding: 3px 9px; border-radius: 3px;
+  }
+  .report-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-pdf {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 16px;
+    background: transparent;
+    border: 1.5px solid var(--amber);
+    border-radius: 6px;
+    color: var(--amber);
+    font-family: var(--sans); font-weight: 600; font-size: 0.82rem;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-pdf:hover { background: rgba(245,166,35,0.1); }
+
+  /* Section cards */
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .section-card {
+    background: var(--card);
+    border: 1px solid var(--grid);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .section-card.full { grid-column: 1 / -1; }
+  .section-icon {
+    width: 26px; height: 26px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; margin-bottom: 8px;
+  }
+  .icon-work    { background: rgba(61,186,124,0.15); }
+  .icon-issue   { background: rgba(224,82,82,0.15); }
+  .icon-weather { background: rgba(138,174,200,0.15); }
+  .icon-next    { background: rgba(245,166,35,0.15); }
+  .section-label {
+    font-family: var(--mono); font-size: 0.65rem;
+    letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 7px;
+  }
+  .section-content { font-size: 0.88rem; line-height: 1.7; color: var(--white); }
+  .section-content ul { padding-left: 14px; display: flex; flex-direction: column; gap: 3px; }
+  .section-content li { color: var(--light); }
+  .weather-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .weather-chip {
+    background: var(--surface); border: 1px solid var(--grid);
+    border-radius: 4px; padding: 3px 8px; font-size: 0.78rem; color: var(--light); font-family: var(--mono);
+  }
+
+  /* Report photos */
+  .report-photos { margin-top: 12px; }
+  .report-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .report-photo-item {
+    aspect-ratio: 4/3;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--grid);
+    background: var(--card);
+  }
+  .report-photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block; width: 15px; height: 15px;
+    border: 2px solid rgba(245,166,35,0.3);
+    border-top-color: var(--amber);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--card); border: 1px solid var(--grid);
+    color: var(--white); padding: 9px 18px;
+    border-radius: 6px; font-size: 0.82rem; font-family: var(--mono);
+    transition: transform 0.3s ease; z-index: 200; white-space: nowrap;
+  }
+  #toast.show  { transform: translateX(-50%) translateY(0); }
+  #toast.error   { border-color: var(--danger); color: var(--danger); }
+  #toast.success { border-color: var(--success); color: var(--success); }
+
+  @media (max-width: 580px) {
+    .report-grid { grid-template-columns: 1fr; }
+    .section-card.full { grid-column: 1; }
+    .report-header { flex-direction: column; }
+    .report-actions { width: 100%; }
+    .btn-pdf { flex: 1; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Camera modal -->
+<div class="cam-modal" id="cam-modal">
+  <video id="cam-video" autoplay playsinline muted></video>
+  <canvas id="snap-canvas"></canvas>
+  <button class="btn-cam-close" id="btn-cam-close">✕</button>
+  <div class="cam-modal-controls">
+    <button class="btn-flip-cam" id="btn-flip-cam" title="Flip camera">↺</button>
+    <button class="btn-shutter" id="btn-shutter">
+      <div class="btn-shutter-inner"></div>
+    </button>
+    <div style="width:44px"></div>
+  </div>
+</div>
+
+<div id="offline-banner">⚡ You are offline — API calls unavailable, UI works locally</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    Site<span>Log</span>
+  </div>
+  <div class="header-right">
+    <button id="btn-install">⬇ Install App</button>
+    <div class="date-badge" id="date-badge"></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- GPS + Weather -->
+  <div class="location-strip">
+    <button class="btn-locate" id="btn-locate">📍 Get Location</button>
+    <div class="location-info">
+      <div class="gps-coords" id="gps-coords">No location — tap to get GPS coordinates</div>
+      <div class="weather-live" id="weather-live"></div>
+    </div>
+  </div>
+
+  <!-- Camera / Photo -->
+  <div class="camera-panel">
+    <div class="panel-label">📷 Site Photos</div>
+    <div class="camera-controls">
+      <button class="btn-cam" id="btn-open-camera">📷 Take Photo</button>
+      <button class="btn-cam" id="btn-upload-photo">🖼 Upload Photo</button>
+      <input type="file" id="photo-input" accept="image/*" multiple>
+    </div>
+    <div class="photo-grid" id="photo-grid"></div>
+    <div class="photo-count" id="photo-count"></div>
+  </div>
+
+  <!-- Recorder -->
+  <div class="recorder-card">
+    <div class="rec-title">
+      <strong>Record your site briefing</strong><br>
+      Describe work done, issues, conditions, and next steps.
+    </div>
+
+    <div class="rec-timer" id="rec-timer">00:00</div>
+
+    <button class="btn-record" id="btn-record" title="Start / Stop recording">
+      <div class="rec-dot"></div>
+    </button>
+
+    <div class="waveform-wrap" id="waveform">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    </div>
+
+    <div class="rec-status" id="rec-status">Tap to start recording</div>
+  </div>
+
+  <!-- Transcript -->
+  <div class="transcript-box" id="transcript-box">
+    <div class="panel-label">📝 Transcript — edit before generating</div>
+    <textarea id="transcript-text" placeholder="Transcription will appear here…"></textarea>
+
+    <div class="progress-bar" id="progress-bar" style="display:none;">
+      <div class="step" id="step-transcribe"><div class="step-dot"></div>Transcribed</div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step" id="step-generate"><div class="step-dot"></div>Generating</div>
+      <div class="step-line" id="line-2"></div>
+      <div class="step" id="step-done"><div class="step-dot"></div>Ready</div>
+    </div>
+
+    <button class="btn-generate" id="btn-generate">
+      <span>Generate Daily Report</span>
+    </button>
+  </div>
+
+  <!-- Report -->
+  <div id="report-section">
+    <div class="report-header">
+      <div class="report-title-area">
+        <div class="report-eyebrow">▣ Construction Site Daily Report</div>
+        <div class="report-title" id="rpt-title">Daily Field Report</div>
+        <div class="report-meta">
+          <div class="meta-tag" id="rpt-date"></div>
+          <div class="meta-tag" id="rpt-site"></div>
+          <div class="meta-tag" id="rpt-gps" style="display:none"></div>
+        </div>
+      </div>
+      <div class="report-actions">
+        <button class="btn-pdf" id="btn-pdf">↓ Download PDF</button>
+      </div>
+    </div>
+
+    <div class="report-grid" id="report-grid"></div>
+
+    <!-- Photos in report -->
+    <div class="report-photos" id="report-photos" style="display:none">
+      <div class="section-card full" style="margin-top:14px;">
+        <div class="panel-label">📷 Site Photos</div>
+        <div class="report-photos-grid" id="report-photos-grid"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+let mediaRecorder, audioChunks = [], timerInterval, seconds = 0, isRecording = false;
+let gpsCoords = null;         // { lat, lon }
+let liveWeather = null;       // open-meteo data
+let capturedPhotos = [];      // array of dataURLs
+let currentReport = null;
+let camStream = null;
+let facingMode = 'environment'; // rear camera default
+let deferredInstallPrompt = null;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function setDate() {
+  const now = new Date();
+  $('date-badge').textContent = now.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+  $('rpt-date').textContent = now.toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+}
+setDate();
+
+// ─── Service Worker registration ─────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    console.log('SW registered:', reg.scope);
+  }).catch(err => console.warn('SW failed:', err));
+}
+
+// ─── Offline detection ────────────────────────────────────────────────────────
+function updateOnline() {
+  $('offline-banner').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online',  updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// ─── PWA Install prompt ───────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  $('btn-install').classList.add('visible');
+});
+$('btn-install').addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') $('btn-install').classList.remove('visible');
+  deferredInstallPrompt = null;
+});
+window.addEventListener('appinstalled', () => {
+  $('btn-install').classList.remove('visible');
+  toast('SiteLog installed!', 'success');
+});
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.className = '', 3400);
+}
+
+// ─── GPS + Open-Meteo Weather ─────────────────────────────────────────────────
+$('btn-locate').addEventListener('click', getLocation);
+
+function getLocation() {
+  if (!navigator.geolocation) { toast('Geolocation not supported', 'error'); return; }
+  $('gps-coords').textContent = 'Locating…';
+  $('btn-locate').textContent = '⏳ Locating…';
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const { latitude: lat, longitude: lon, accuracy } = pos.coords;
+      gpsCoords = { lat, lon };
+      $('gps-coords').textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}  (±${Math.round(accuracy)}m)`;
+      $('gps-coords').className = 'gps-coords got';
+      $('btn-locate').textContent = '📍 Location Set';
+      $('btn-locate').classList.add('active');
+      $('rpt-gps').textContent = `GPS ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      $('rpt-gps').style.display = '';
+      toast('Location acquired', 'success');
+      await fetchWeather(lat, lon);
+    },
+    err => {
+      $('gps-coords').textContent = 'Location denied or unavailable';
+      $('btn-locate').textContent = '📍 Get Location';
+      toast('Could not get location: ' + err.message, 'error');
+    },
+    { enableHighAccuracy: true, timeout: 12000 }
+  );
+}
+
+const WMO_CODES = {
+  0:'Clear sky', 1:'Mainly clear', 2:'Partly cloudy', 3:'Overcast',
+  45:'Foggy', 48:'Icy fog', 51:'Light drizzle', 53:'Drizzle', 55:'Heavy drizzle',
+  61:'Light rain', 63:'Rain', 65:'Heavy rain', 71:'Light snow', 73:'Snow', 75:'Heavy snow',
+  80:'Rain showers', 81:'Heavy showers', 82:'Violent showers',
+  95:'Thunderstorm', 96:'Thunderstorm+hail', 99:'Heavy thunderstorm+hail'
+};
+
+async function fetchWeather(lat, lon) {
+  try {
+    $('weather-live').innerHTML = '<span class="wx-chip">Fetching weather…</span>';
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weathercode&wind_speed_unit=kmh&timezone=auto`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Weather API error');
+    const data = await res.json();
+    const c = data.current;
+    liveWeather = {
+      temp: c.temperature_2m,
+      unit: data.current_units.temperature_2m,
+      humidity: c.relative_humidity_2m,
+      wind: c.wind_speed_10m,
+      windUnit: data.current_units.wind_speed_10m,
+      code: c.weathercode,
+      conditions: WMO_CODES[c.weathercode] || 'Unknown'
+    };
+    $('weather-live').innerHTML = `
+      <span class="wx-chip">🌡 ${liveWeather.temp}${liveWeather.unit}</span>
+      <span class="wx-chip">${liveWeather.conditions}</span>
+      <span class="wx-chip">💧 ${liveWeather.humidity}%</span>
+      <span class="wx-chip">💨 ${liveWeather.wind} ${liveWeather.windUnit}</span>
+    `;
+    toast('Weather loaded', 'success');
+  } catch(e) {
+    $('weather-live').innerHTML = '<span class="wx-chip" style="color:var(--danger)">Weather unavailable</span>';
+  }
+}
+
+// ─── Camera ───────────────────────────────────────────────────────────────────
+$('btn-open-camera').addEventListener('click', openCamera);
+$('btn-upload-photo').addEventListener('click', () => $('photo-input').click());
+$('photo-input').addEventListener('change', e => {
+  [...e.target.files].forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => addPhoto(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+});
+
+async function openCamera() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 1280 }, height: { ideal: 960 } },
+      audio: false
+    });
+    $('cam-video').srcObject = camStream;
+    $('cam-modal').classList.add('open');
+  } catch(e) {
+    toast('Camera not available: ' + e.message, 'error');
+  }
+}
+
+$('btn-cam-close').addEventListener('click', closeCamera);
+function closeCamera() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  $('cam-modal').classList.remove('open');
+}
+
+$('btn-flip-cam').addEventListener('click', async () => {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  closeCamera();
+  await openCamera();
+});
+
+$('btn-shutter').addEventListener('click', () => {
+  const video = $('cam-video');
+  const canvas = $('snap-canvas');
+  canvas.width  = video.videoWidth  || 1280;
+  canvas.height = video.videoHeight || 960;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataURL = canvas.toDataURL('image/jpeg', 0.85);
+  addPhoto(dataURL);
+  // Flash effect
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;background:#fff;opacity:0.7;z-index:200;pointer-events:none;transition:opacity 0.3s';
+  document.body.appendChild(flash);
+  setTimeout(() => { flash.style.opacity = '0'; setTimeout(() => flash.remove(), 300); }, 50);
+  closeCamera();
+  toast('Photo captured', 'success');
+});
+
+function addPhoto(dataURL) {
+  capturedPhotos.push(dataURL);
+  renderPhotoGrid();
+}
+
+function removePhoto(idx) {
+  capturedPhotos.splice(idx, 1);
+  renderPhotoGrid();
+}
+
+function renderPhotoGrid() {
+  const grid = $('photo-grid');
+  grid.innerHTML = '';
+  capturedPhotos.forEach((src, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'photo-thumb';
+    wrap.innerHTML = `
+      <img src="${src}" alt="Site photo ${i+1}">
+      <button class="remove-photo" title="Remove">✕</button>`;
+    wrap.querySelector('.remove-photo').onclick = () => removePhoto(i);
+    grid.appendChild(wrap);
+  });
+  $('photo-count').textContent = capturedPhotos.length
+    ? `${capturedPhotos.length} photo${capturedPhotos.length > 1 ? 's' : ''} attached`
+    : '';
+}
+
+// ─── Recording ────────────────────────────────────────────────────────────────
+$('btn-record').addEventListener('click', async () => {
+  if (!isRecording) await startRecording();
+  else stopRecording();
+});
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
+    mediaRecorder = new MediaRecorder(stream, { mimeType });
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = processAudio;
+    mediaRecorder.start(200);
+    isRecording = true; seconds = 0;
+    $('rec-timer').classList.add('visible');
+    $('btn-record').classList.add('recording');
+    $('waveform').classList.add('active');
+    $('rec-status').textContent = 'Recording… tap to stop';
+    $('rec-status').className = 'rec-status recording';
+    timerInterval = setInterval(() => {
+      seconds++;
+      $('rec-timer').textContent = `${pad(Math.floor(seconds/60))}:${pad(seconds%60)}`;
+    }, 1000);
+  } catch(e) { toast('Microphone access denied', 'error'); }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  }
+  isRecording = false;
+  clearInterval(timerInterval);
+  $('btn-record').classList.remove('recording');
+  $('waveform').classList.remove('active');
+  $('rec-status').textContent = 'Processing audio…';
+  $('rec-status').className = 'rec-status processing';
+}
+
+async function processAudio() {
+  const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+  const ext  = mediaRecorder.mimeType.includes('ogg') ? 'ogg' : 'webm';
+  const formData = new FormData();
+  formData.append('file', blob, `recording.${ext}`);
+  formData.append('model', 'whisper-large-v3');
+  formData.append('response_format', 'json');
+  try {
+    $('rec-status').textContent = 'Transcribing with Whisper…';
+    const res = await fetch('/.netlify/functions/transcribe', {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Groq error ${res.status}`);
+    }
+    const data = await res.json();
+    $('transcript-text').value = data.text || '';
+    $('transcript-box').style.display = 'block';
+    $('progress-bar').style.display = 'flex';
+    setStep(1);
+    $('rec-status').textContent = 'Transcription complete ✓';
+    $('rec-status').className = 'rec-status done';
+    $('rec-timer').classList.remove('visible');
+    toast('Transcription ready', 'success');
+  } catch(e) {
+    toast('Transcription failed: ' + e.message, 'error');
+    resetRecorder();
+  }
+}
+
+function resetRecorder() {
+  $('rec-status').textContent = 'Tap to start recording';
+  $('rec-status').className = 'rec-status';
+  $('rec-timer').classList.remove('visible');
+  seconds = 0;
+}
+
+function setStep(active) {
+  ['step-transcribe','step-generate','step-done'].forEach((id, i) => {
+    const el = $(id);
+    el.className = 'step' + (i+1 < active ? ' done' : i+1 === active ? ' active' : '');
+  });
+  ['line-1','line-2'].forEach((id, i) => {
+    $(id).className = 'step-line' + (i+1 < active ? ' done' : '');
+  });
+}
+
+// ─── Generate Report ──────────────────────────────────────────────────────────
+$('btn-generate').addEventListener('click', generateReport);
+
+async function generateReport() {
+  const transcript = $('transcript-text').value.trim();
+  if (!transcript) { toast('No transcript to process', 'error'); return; }
+
+  const btn = $('btn-generate');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Generating report…';
+  setStep(2);
+
+  // Build weather context from live data
+  let weatherContext = '';
+  if (liveWeather) {
+    weatherContext = `LIVE WEATHER DATA (from GPS location, do not ask to estimate):
+- Conditions: ${liveWeather.conditions}
+- Temperature: ${liveWeather.temp}${liveWeather.unit}
+- Humidity: ${liveWeather.humidity}%
+- Wind: ${liveWeather.wind} ${liveWeather.windUnit}
+Use this data directly for the weather section.`;
+  }
+
+  let gpsContext = '';
+  if (gpsCoords) {
+    gpsContext = `GPS COORDINATES: ${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)}`;
+  }
+
+  const prompt = `You are a construction site reporting assistant. Given this voice transcript from a site manager, extract and structure it into a professional daily report.
+
+TRANSCRIPT:
+"""
+${transcript}
+"""
+
+${gpsContext}
+${weatherContext}
+
+Return ONLY a valid JSON object (no markdown fences, no extra text) with this exact structure:
+{
+  "report_title": "string — a brief project/site name if mentioned, otherwise 'Daily Field Report'",
+  "site_name": "string — site or project name if mentioned, otherwise 'Construction Site'",
+  "summary": "string — one sentence overall summary",
+  "work_done": ["array of strings — specific tasks completed today"],
+  "issues": ["array of strings — problems, blockers, safety concerns found"],
+  "weather": {
+    "conditions": "string",
+    "temperature": "string or null",
+    "humidity": "string or null",
+    "wind": "string or null",
+    "impact": "string — how weather affected work, or 'No significant impact'"
+  },
+  "next_steps": ["array of strings — planned actions for next working day"],
+  "workforce_notes": "string or null",
+  "materials_notes": "string or null"
+}`;
+
+  try {
+    const res = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Gemini error ${res.status}`);
+    }
+    const data = await res.json();
+    let raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    raw = raw.replace(/```json|```/g, '').trim();
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON object found in response');
+    const report = JSON.parse(jsonMatch[0]);
+    renderReport(report);
+    setStep(3);
+    toast('Report generated!', 'success');
+  } catch(e) {
+    toast('Report generation failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>Regenerate Report</span>';
+  }
+}
+
+// ─── Render Report ────────────────────────────────────────────────────────────
+function renderReport(r) {
+  currentReport = r;
+  $('rpt-title').textContent = r.report_title || 'Daily Field Report';
+  $('rpt-site').textContent = '📍 ' + (r.site_name || 'Construction Site');
+
+  const grid = $('report-grid');
+  grid.innerHTML = '';
+
+  if (r.summary) {
+    const c = makeCard('full');
+    c.innerHTML = `<div class="section-label">Executive Summary</div>
+      <div class="section-content" style="font-size:0.95rem;color:var(--light)">${r.summary}</div>`;
+    grid.appendChild(c);
+  }
+
+  const workCard = makeCard();
+  workCard.innerHTML = `<div class="section-icon icon-work">🔧</div>
+    <div class="section-label">Work Completed Today</div>
+    <div class="section-content">${listOrText(r.work_done)}</div>`;
+  grid.appendChild(workCard);
+
+  const issueCard = makeCard();
+  issueCard.innerHTML = `<div class="section-icon icon-issue">⚠️</div>
+    <div class="section-label">Issues & Blockers</div>
+    <div class="section-content">${r.issues && r.issues.length ? listOrText(r.issues) : '<span style="color:var(--muted)">No issues reported</span>'}</div>`;
+  grid.appendChild(issueCard);
+
+  const wxCard = makeCard();
+  const wx = r.weather || {};
+  wxCard.innerHTML = `<div class="section-icon icon-weather">🌤️</div>
+    <div class="section-label">Weather Conditions</div>
+    <div class="section-content">
+      <div class="weather-row">
+        ${wx.conditions ? `<div class="weather-chip">${wx.conditions}</div>` : ''}
+        ${wx.temperature ? `<div class="weather-chip">🌡 ${wx.temperature}</div>` : ''}
+        ${wx.humidity ? `<div class="weather-chip">💧 ${wx.humidity}</div>` : ''}
+        ${wx.wind ? `<div class="weather-chip">💨 ${wx.wind}</div>` : ''}
+      </div>
+      ${wx.impact ? `<p style="margin-top:8px;color:var(--light);font-size:0.83rem">${wx.impact}</p>` : ''}
+      ${gpsCoords ? `<p style="margin-top:6px;font-family:var(--mono);font-size:0.68rem;color:var(--muted)">📍 ${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lon.toFixed(4)}</p>` : ''}
+    </div>`;
+  grid.appendChild(wxCard);
+
+  const nextCard = makeCard();
+  nextCard.innerHTML = `<div class="section-icon icon-next">→</div>
+    <div class="section-label">Next Steps</div>
+    <div class="section-content">${listOrText(r.next_steps)}</div>`;
+  grid.appendChild(nextCard);
+
+  if (r.workforce_notes || r.materials_notes) {
+    const extra = makeCard('full');
+    extra.innerHTML = `<div class="section-label">Additional Notes</div>
+      <div class="section-content" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        ${r.workforce_notes ? `<div><strong style="color:var(--light);font-size:0.78rem">👷 Workforce</strong><p style="margin-top:4px">${r.workforce_notes}</p></div>` : ''}
+        ${r.materials_notes ? `<div><strong style="color:var(--light);font-size:0.78rem">📦 Materials</strong><p style="margin-top:4px">${r.materials_notes}</p></div>` : ''}
+      </div>`;
+    grid.appendChild(extra);
+  }
+
+  // Photos in report
+  if (capturedPhotos.length > 0) {
+    const photoGrid = $('report-photos-grid');
+    photoGrid.innerHTML = '';
+    capturedPhotos.forEach((src, i) => {
+      const item = document.createElement('div');
+      item.className = 'report-photo-item';
+      item.innerHTML = `<img src="${src}" alt="Site photo ${i+1}">`;
+      photoGrid.appendChild(item);
+    });
+    $('report-photos').style.display = 'block';
+  } else {
+    $('report-photos').style.display = 'none';
+  }
+
+  $('report-section').style.display = 'block';
+  $('report-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function makeCard(extraClass) {
+  const d = document.createElement('div');
+  d.className = 'section-card' + (extraClass ? ' ' + extraClass : '');
+  return d;
+}
+
+function listOrText(arr) {
+  if (!arr || !arr.length) return '<span style="color:var(--muted)">None recorded</span>';
+  if (arr.length === 1) return `<p>${arr[0]}</p>`;
+  return '<ul>' + arr.map(i => `<li>${i}</li>`).join('') + '</ul>';
+}
+
+// ─── PDF Download ─────────────────────────────────────────────────────────────
+$('btn-pdf').addEventListener('click', downloadPDF);
+
+function pdfSafe(str) {
+  if (!str) return '';
+  return str
+    .replace(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g, '')
+    .replace(/[^\x00-\xFF]/g, '')
+    .replace(/  +/g, ' ')
+    .trim();
+}
+
+async function downloadPDF() {
+  if (!currentReport) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const r = currentReport;
+  const now = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 18;
+  const contentW = pageW - margin * 2;
+  let y = 0;
+
+  function checkPage(needed = 12) {
+    if (y + needed > 270) { doc.addPage(); y = 20; }
+  }
+
+  // Header bar
+  doc.setFillColor(10, 37, 64);
+  doc.rect(0, 0, pageW, 28, 'F');
+  doc.setFontSize(18); doc.setTextColor(245, 166, 35); doc.setFont('helvetica', 'bold');
+  doc.text('SiteLog', margin, 17);
+  doc.setFontSize(10); doc.setTextColor(138, 174, 200); doc.setFont('helvetica', 'normal');
+  doc.text('Daily Field Report', margin + 32, 17);
+  doc.text(now, pageW - margin, 17, { align: 'right' });
+
+  y = 36;
+
+  // Title
+  doc.setFontSize(16); doc.setTextColor(15, 25, 35); doc.setFont('helvetica', 'bold');
+  doc.text(pdfSafe(r.report_title) || 'Daily Field Report', margin, y);
+  y += 7;
+
+  doc.setFontSize(10); doc.setTextColor(77, 114, 152); doc.setFont('helvetica', 'normal');
+  let siteLine = 'Location: ' + (pdfSafe(r.site_name) || 'Construction Site');
+  if (gpsCoords) siteLine += `  |  GPS: ${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lon.toFixed(4)}`;
+  doc.text(siteLine, margin, y);
+  y += 10;
+
+  // Summary
+  if (r.summary) {
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(margin, y, contentW, 14, 2, 2, 'F');
+    doc.setFontSize(9); doc.setTextColor(50, 70, 90); doc.setFont('helvetica', 'italic');
+    const sumLines = doc.splitTextToSize(pdfSafe(r.summary), contentW - 8);
+    doc.text(sumLines, margin + 4, y + 6);
+    y += 14 + 8;
+  }
+
+  function section(title, items, color) {
+    checkPage(20);
+    doc.setFillColor(...color);
+    doc.rect(margin, y, 3, items.length > 0 ? Math.min(items.length * 7 + 14, 80) : 14, 'F');
+    doc.setFontSize(8); doc.setTextColor(100, 120, 140); doc.setFont('helvetica', 'bold');
+    doc.text(title.toUpperCase(), margin + 7, y + 5);
+    y += 10;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(20, 30, 40);
+    if (!items || items.length === 0) {
+      doc.setTextColor(150, 160, 170); doc.text('None recorded', margin + 7, y); y += 7;
+    } else {
+      items.forEach(item => {
+        checkPage(8);
+        const lines = doc.splitTextToSize('- ' + pdfSafe(item), contentW - 10);
+        doc.text(lines, margin + 7, y);
+        y += lines.length * 5.5 + 1;
+      });
+    }
+    y += 6;
+  }
+
+  section('Work Completed Today', r.work_done || [], [61, 186, 124]);
+  section('Issues & Blockers', r.issues || [], [224, 82, 82]);
+
+  // Weather
+  checkPage(28);
+  const wx = r.weather || {};
+  doc.setFillColor(26, 47, 74); doc.rect(margin, y, 3, 20, 'F');
+  doc.setFontSize(8); doc.setTextColor(100, 120, 140); doc.setFont('helvetica', 'bold');
+  doc.text('WEATHER CONDITIONS', margin + 7, y + 5);
+  y += 10;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(20, 30, 40);
+  const wxParts = [wx.conditions, wx.temperature, wx.humidity ? `Humidity: ${wx.humidity}` : null, wx.wind ? `Wind: ${wx.wind}` : null].filter(Boolean);
+  const wxStr = wxParts.join('  |  ');
+  if (wxStr) { doc.text(pdfSafe(wxStr), margin + 7, y); y += 6; }
+  if (wx.impact) {
+    doc.setTextColor(70, 100, 130);
+    const impLines = doc.splitTextToSize(pdfSafe(wx.impact), contentW - 10);
+    doc.text(impLines, margin + 7, y);
+    y += impLines.length * 5.5 + 2;
+  }
+  y += 6;
+
+  section('Next Steps', r.next_steps || [], [245, 166, 35]);
+
+  if (r.workforce_notes) {
+    checkPage(16);
+    doc.setFontSize(8); doc.setTextColor(100,120,140); doc.setFont('helvetica','bold');
+    doc.text('WORKFORCE', margin + 7, y); y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(20,30,40);
+    const wfLines = doc.splitTextToSize(pdfSafe(r.workforce_notes), contentW - 10);
+    doc.text(wfLines, margin + 7, y);
+    y += wfLines.length * 5.5 + 8;
+  }
+
+  if (r.materials_notes) {
+    checkPage(16);
+    doc.setFontSize(8); doc.setTextColor(100,120,140); doc.setFont('helvetica','bold');
+    doc.text('MATERIALS', margin + 7, y); y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(20,30,40);
+    const mtLines = doc.splitTextToSize(pdfSafe(r.materials_notes), contentW - 10);
+    doc.text(mtLines, margin + 7, y);
+    y += mtLines.length * 5.5 + 8;
+  }
+
+  // Photos in PDF
+  if (capturedPhotos.length > 0) {
+    checkPage(20);
+    doc.setFontSize(8); doc.setTextColor(100,120,140); doc.setFont('helvetica','bold');
+    doc.setFillColor(100,120,140);
+    doc.rect(margin, y, 3, 10, 'F');
+    doc.text('SITE PHOTOS', margin + 7, y + 5);
+    y += 14;
+
+    const photoW = 55, photoH = 42, gap = 6;
+    let col = 0;
+    const rowX = [margin, margin + photoW + gap, margin + (photoW + gap) * 2];
+
+    for (let i = 0; i < capturedPhotos.length; i++) {
+      if (col === 0) checkPage(photoH + 8);
+      try {
+        doc.addImage(capturedPhotos[i], 'JPEG', rowX[col], y, photoW, photoH, undefined, 'FAST');
+      } catch(e) { /* skip bad image */ }
+      col++;
+      if (col >= 3) { col = 0; y += photoH + gap; }
+    }
+    if (col > 0) y += photoH + gap;
+    y += 4;
+  }
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(245, 247, 250);
+    doc.rect(0, 284, pageW, 13, 'F');
+    doc.setFontSize(8); doc.setTextColor(150, 160, 175); doc.setFont('helvetica', 'normal');
+    doc.text('Generated by SiteLog', margin, 291);
+    doc.text(`Page ${i} of ${pageCount}`, pageW - margin, 291, { align: 'right' });
+  }
+
+  const filename = `sitelog-report-${new Date().toISOString().slice(0,10)}.pdf`;
+  doc.save(filename);
+  toast('PDF saved: ' + filename, 'success');
+}
+</script>
+</body>
+</html>
