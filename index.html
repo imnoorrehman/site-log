@@ -7,7 +7,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a2540">
+<meta name="theme-color" content="#0b2238">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,24 +18,35 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
   :root {
-    --ink:       #0f1923;
-    --steel:     #1e3a5f;
-    --blueprint: #0a2540;
-    --amber:     #f5a623;
-    --amber-dim: #c47f0a;
-    --grid:      #162d4a;
-    --surface:   #132136;
-    --card:      #1a2f4a;
-    --muted:     #4d7298;
-    --light:     #8aaec8;
-    --white:     #e8f0f8;
-    --danger:    #e05252;
-    --success:   #3dba7c;
+    --ink:       #060f1c;
+    --steel:     #2c5783;
+    --blueprint: #0b2238;
+    --amber:     #e9a23b;
+    --amber-dim: #b9791f;
+    --cyan:      #5fc8d6;
+    --grid:      #1f3f63;
+    --surface:   #122c46;
+    --card:      #1a3a5a;
+    --muted:     #5d83ab;
+    --light:     #9ec0dc;
+    --white:     #eef4fa;
+    --danger:    #e8685f;
+    --success:   #45c08a;
     --mono: 'Space Mono', monospace;
     --sans: 'Space Grotesk', sans-serif;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Inline SVG icons ── */
+  .icon {
+    width: 1em; height: 1em;
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: -0.125em;
+  }
+  .icon-spin { animation: icon-spin 1s linear infinite; }
+  @keyframes icon-spin { to { transform: rotate(360deg); } }
 
   body {
     background: var(--blueprint);
@@ -43,8 +54,8 @@
     font-family: var(--sans);
     min-height: 100vh;
     background-image:
-      linear-gradient(rgba(26,47,74,0.5) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(26,47,74,0.5) 1px, transparent 1px);
+      linear-gradient(rgba(95,200,214,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(95,200,214,0.07) 1px, transparent 1px);
     background-size: 32px 32px;
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -57,7 +68,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(10,37,64,0.92);
+    background: rgba(11,34,56,0.92);
     backdrop-filter: blur(8px);
     position: sticky;
     top: 0;
@@ -142,6 +153,7 @@
     color: var(--amber);
     text-transform: uppercase;
     margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
   }
 
   /* ── GPS + Weather strip ── */
@@ -198,6 +210,9 @@
     font-family: var(--mono);
     font-size: 0.7rem;
     color: var(--light);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
 
   /* ── Recorder card ── */
@@ -229,7 +244,7 @@
     transition: all 0.2s;
     outline: none;
   }
-  .btn-record:hover { background: rgba(245,166,35,0.08); transform: scale(1.05); }
+  .btn-record:hover { background: rgba(233,162,59,0.08); transform: scale(1.05); }
   .btn-record.recording { border-color: var(--danger); animation: pulse-ring 1.4s ease-out infinite; }
   .btn-record.recording .rec-dot { background: var(--danger); }
   .rec-dot {
@@ -240,9 +255,9 @@
   }
   .btn-record.recording .rec-dot { border-radius: 5px; width: 20px; height: 20px; }
   @keyframes pulse-ring {
-    0%   { box-shadow: 0 0 0 0 rgba(224,82,82,0.5); }
-    70%  { box-shadow: 0 0 0 18px rgba(224,82,82,0); }
-    100% { box-shadow: 0 0 0 0 rgba(224,82,82,0); }
+    0%   { box-shadow: 0 0 0 0 rgba(232,104,95,0.5); }
+    70%  { box-shadow: 0 0 0 18px rgba(232,104,95,0); }
+    100% { box-shadow: 0 0 0 0 rgba(232,104,95,0); }
   }
 
   .waveform-wrap {
@@ -275,6 +290,7 @@
     color: var(--muted);
     min-height: 18px;
     text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
   }
   .rec-status.recording { color: var(--danger); }
   .rec-status.processing { color: var(--amber); }
@@ -344,7 +360,7 @@
     position: absolute;
     top: 3px; right: 3px;
     width: 20px; height: 20px;
-    background: rgba(224,82,82,0.85);
+    background: rgba(232,104,95,0.85);
     border: none;
     border-radius: 50%;
     color: #fff;
@@ -468,7 +484,7 @@
     cursor: pointer;
     transition: background 0.2s, transform 0.1s;
   }
-  .btn-generate:hover { background: #f7b84a; transform: translateY(-1px); }
+  .btn-generate:hover { background: #f4b860; transform: translateY(-1px); }
   .btn-generate:active { transform: translateY(0); }
   .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
@@ -496,6 +512,7 @@
   .report-eyebrow {
     font-family: var(--mono); font-size: 0.68rem;
     letter-spacing: 0.14em; color: var(--amber); text-transform: uppercase; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
   }
   .report-title { font-size: 1.4rem; font-weight: 700; color: var(--white); }
   .report-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
@@ -503,6 +520,7 @@
     font-family: var(--mono); font-size: 0.7rem;
     background: var(--card); border: 1px solid var(--grid);
     color: var(--light); padding: 3px 9px; border-radius: 3px;
+    display: inline-flex; align-items: center; gap: 4px;
   }
   .report-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .btn-pdf {
@@ -515,7 +533,7 @@
     font-family: var(--sans); font-weight: 600; font-size: 0.82rem;
     cursor: pointer; transition: all 0.2s; white-space: nowrap;
   }
-  .btn-pdf:hover { background: rgba(245,166,35,0.1); }
+  .btn-pdf:hover { background: rgba(233,162,59,0.1); }
 
   /* Feedback button */
   .btn-feedback {
@@ -550,10 +568,11 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 0.85rem; margin-bottom: 8px;
   }
-  .icon-work    { background: rgba(61,186,124,0.15); }
-  .icon-issue   { background: rgba(224,82,82,0.15); }
-  .icon-weather { background: rgba(138,174,200,0.15); }
-  .icon-next    { background: rgba(245,166,35,0.15); }
+  .section-icon .icon { width: 15px; height: 15px; }
+  .icon-work    { background: rgba(69,192,138,0.15); color: var(--success); }
+  .icon-issue   { background: rgba(232,104,95,0.15); color: var(--danger); }
+  .icon-weather { background: rgba(95,200,214,0.15); color: var(--cyan); }
+  .icon-next    { background: rgba(233,162,59,0.15); color: var(--amber); }
   .section-label {
     font-family: var(--mono); font-size: 0.65rem;
     letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 7px;
@@ -565,7 +584,9 @@
   .weather-chip {
     background: var(--surface); border: 1px solid var(--grid);
     border-radius: 4px; padding: 3px 8px; font-size: 0.78rem; color: var(--light); font-family: var(--mono);
+    display: inline-flex; align-items: center; gap: 4px;
   }
+  .wx-chip .icon, .weather-chip .icon { color: var(--cyan); }
 
   /* Report photos */
   .report-photos { margin-top: 12px; }
@@ -587,7 +608,7 @@
   /* Spinner */
   .spinner {
     display: inline-block; width: 15px; height: 15px;
-    border: 2px solid rgba(245,166,35,0.3);
+    border: 2px solid rgba(233,162,59,0.3);
     border-top-color: var(--amber);
     border-radius: 50%; animation: spin 0.7s linear infinite;
   }
@@ -621,9 +642,9 @@
 <div class="cam-modal" id="cam-modal">
   <video id="cam-video" autoplay playsinline muted></video>
   <canvas id="snap-canvas"></canvas>
-  <button class="btn-cam-close" id="btn-cam-close">✕</button>
+  <button class="btn-cam-close" id="btn-cam-close"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
   <div class="cam-modal-controls">
-    <button class="btn-flip-cam" id="btn-flip-cam" title="Flip camera">↺</button>
+    <button class="btn-flip-cam" id="btn-flip-cam" title="Flip camera"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"></path><path d="M3 3v5h5"></path></svg></button>
     <button class="btn-shutter" id="btn-shutter">
       <div class="btn-shutter-inner"></div>
     </button>
@@ -631,15 +652,15 @@
   </div>
 </div>
 
-<div id="offline-banner">⚡ You are offline — API calls unavailable, UI works locally</div>
+<div id="offline-banner"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> You are offline — API calls unavailable, UI works locally</div>
 
 <header>
   <div class="logo">
-    <div class="logo-icon">⚡</div>
+    <div class="logo-icon"><svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
     Site<span>Log</span>
   </div>
   <div class="header-right">
-    <button id="btn-install">⬇ Install App</button>
+    <button id="btn-install"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Install App</button>
     <div class="date-badge" id="date-badge"></div>
   </div>
 </header>
@@ -648,7 +669,7 @@
 
   <!-- GPS + Weather -->
   <div class="location-strip">
-    <button class="btn-locate" id="btn-locate">📍 Get Location</button>
+    <button class="btn-locate" id="btn-locate"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg> Get Location</button>
     <div class="location-info">
       <div class="gps-coords" id="gps-coords">No location — tap to get GPS coordinates</div>
       <div class="weather-live" id="weather-live"></div>
@@ -657,10 +678,10 @@
 
   <!-- Camera / Photo -->
   <div class="camera-panel">
-    <div class="panel-label">📷 Site Photos</div>
+    <div class="panel-label"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg> Site Photos</div>
     <div class="camera-controls">
-      <button class="btn-cam" id="btn-open-camera">📷 Take Photo</button>
-      <button class="btn-cam" id="btn-upload-photo">🖼 Upload Photo</button>
+      <button class="btn-cam" id="btn-open-camera"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg> Take Photo</button>
+      <button class="btn-cam" id="btn-upload-photo"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg> Upload Photo</button>
       <input type="file" id="photo-input" accept="image/*" multiple>
     </div>
     <div class="photo-grid" id="photo-grid"></div>
@@ -692,7 +713,7 @@
 
   <!-- Transcript -->
   <div class="transcript-box" id="transcript-box">
-    <div class="panel-label">📝 Transcript — edit before generating</div>
+    <div class="panel-label"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg> Transcript — edit before generating</div>
     <textarea id="transcript-text" placeholder="Transcription will appear here…"></textarea>
 
     <div class="progress-bar" id="progress-bar" style="display:none;">
@@ -712,7 +733,7 @@
   <div id="report-section">
     <div class="report-header">
       <div class="report-title-area">
-        <div class="report-eyebrow">▣ Construction Site Daily Report</div>
+        <div class="report-eyebrow"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg> Construction Site Daily Report</div>
         <div class="report-title" id="rpt-title">Daily Field Report</div>
         <div class="report-meta">
           <div class="meta-tag" id="rpt-date"></div>
@@ -721,7 +742,7 @@
         </div>
       </div>
       <div class="report-actions">
-        <button class="btn-pdf" id="btn-pdf">↓ Download PDF</button>
+        <button class="btn-pdf" id="btn-pdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download PDF</button>
       </div>
     </div>
 
@@ -730,13 +751,13 @@
     <!-- Photos in report -->
     <div class="report-photos" id="report-photos" style="display:none">
       <div class="section-card full" style="margin-top:14px;">
-        <div class="panel-label">📷 Site Photos</div>
+        <div class="panel-label"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg> Site Photos</div>
         <div class="report-photos-grid" id="report-photos-grid"></div>
       </div>
     </div>
   </div>
   <a class="btn-feedback" href="https://wa.me/923009823566?text=SiteLog%20feedback%3A%20" target="_blank" rel="noopener">
-    💬 Send Feedback
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg> Send Feedback
   </a>
 
 </main>
@@ -754,6 +775,24 @@ let currentReport = null;
 let camStream = null;
 let facingMode = 'environment'; // rear camera default
 let deferredInstallPrompt = null;
+
+// ─── Inline icon snippets (reused in dynamically generated HTML) ──────────────
+const SVG_ATTR = 'class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+const ICONS = {
+  mapPin:     `<svg ${SVG_ATTR}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>`,
+  loader:     `<svg ${SVG_ATTR} class="icon icon-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`,
+  check:      `<svg ${SVG_ATTR}><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+  close:      `<svg ${SVG_ATTR}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+  thermometer:`<svg ${SVG_ATTR}><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"></path></svg>`,
+  droplet:    `<svg ${SVG_ATTR}><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7Z"></path></svg>`,
+  wind:       `<svg ${SVG_ATTR}><path d="M12.8 19.6A2 2 0 1 0 14 16H2"></path><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"></path><path d="M9.8 4.4A2 2 0 1 1 11 8H2"></path></svg>`,
+  wrench:     `<svg ${SVG_ATTR}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>`,
+  alert:      `<svg ${SVG_ATTR}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+  cloudSun:   `<svg ${SVG_ATTR}><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"></path><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"></path></svg>`,
+  arrowRight: `<svg ${SVG_ATTR}><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`,
+  hardHat:    `<svg ${SVG_ATTR}><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"></path><path d="M14 6a6 6 0 0 1 6 6v3"></path><path d="M4 15v-3a6 6 0 0 1 6-6"></path><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1 2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path></svg>`,
+  package:    `<svg ${SVG_ATTR}><path d="M16.5 9.4 7.55 4.24"></path><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>`,
+};
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -813,14 +852,14 @@ $('btn-locate').addEventListener('click', getLocation);
 function getLocation() {
   if (!navigator.geolocation) { toast('Geolocation not supported', 'error'); return; }
   $('gps-coords').textContent = 'Locating…';
-  $('btn-locate').textContent = '⏳ Locating…';
+  $('btn-locate').innerHTML = `${ICONS.loader} Locating…`;
   navigator.geolocation.getCurrentPosition(
     async pos => {
       const { latitude: lat, longitude: lon, accuracy } = pos.coords;
       gpsCoords = { lat, lon };
       $('gps-coords').textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}  (±${Math.round(accuracy)}m)`;
       $('gps-coords').className = 'gps-coords got';
-      $('btn-locate').textContent = '📍 Location Set';
+      $('btn-locate').innerHTML = `${ICONS.mapPin} Location Set`;
       $('btn-locate').classList.add('active');
       $('rpt-gps').textContent = `GPS ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
       $('rpt-gps').style.display = '';
@@ -829,7 +868,7 @@ function getLocation() {
     },
     err => {
       $('gps-coords').textContent = 'Location denied or unavailable';
-      $('btn-locate').textContent = '📍 Get Location';
+      $('btn-locate').innerHTML = `${ICONS.mapPin} Get Location`;
       toast('Could not get location: ' + err.message, 'error');
     },
     { enableHighAccuracy: true, timeout: 12000 }
@@ -862,10 +901,10 @@ async function fetchWeather(lat, lon) {
       conditions: WMO_CODES[c.weathercode] || 'Unknown'
     };
     $('weather-live').innerHTML = `
-      <span class="wx-chip">🌡 ${liveWeather.temp}${liveWeather.unit}</span>
+      <span class="wx-chip">${ICONS.thermometer} ${liveWeather.temp}${liveWeather.unit}</span>
       <span class="wx-chip">${liveWeather.conditions}</span>
-      <span class="wx-chip">💧 ${liveWeather.humidity}%</span>
-      <span class="wx-chip">💨 ${liveWeather.wind} ${liveWeather.windUnit}</span>
+      <span class="wx-chip">${ICONS.droplet} ${liveWeather.humidity}%</span>
+      <span class="wx-chip">${ICONS.wind} ${liveWeather.wind} ${liveWeather.windUnit}</span>
     `;
     toast('Weather loaded', 'success');
   } catch(e) {
@@ -945,7 +984,7 @@ function renderPhotoGrid() {
     wrap.className = 'photo-thumb';
     wrap.innerHTML = `
       <img src="${src}" alt="Site photo ${i+1}">
-      <button class="remove-photo" title="Remove">✕</button>`;
+      <button class="remove-photo" title="Remove">${ICONS.close}</button>`;
     wrap.querySelector('.remove-photo').onclick = () => removePhoto(i);
     grid.appendChild(wrap);
   });
@@ -1019,7 +1058,7 @@ async function processAudio() {
     $('transcript-box').style.display = 'block';
     $('progress-bar').style.display = 'flex';
     setStep(1);
-    $('rec-status').textContent = 'Transcription complete ✓';
+    $('rec-status').innerHTML = `Transcription complete ${ICONS.check}`;
     $('rec-status').className = 'rec-status done';
     $('rec-timer').classList.remove('visible');
     toast('Transcription ready', 'success');
@@ -1134,7 +1173,7 @@ Return ONLY a valid JSON object (no markdown fences, no extra text) with this ex
 function renderReport(r) {
   currentReport = r;
   $('rpt-title').textContent = r.report_title || 'Daily Field Report';
-  $('rpt-site').textContent = '📍 ' + (r.site_name || 'Construction Site');
+  $('rpt-site').innerHTML = ICONS.mapPin + ' ' + (r.site_name || 'Construction Site');
 
   const grid = $('report-grid');
   grid.innerHTML = '';
@@ -1147,35 +1186,35 @@ function renderReport(r) {
   }
 
   const workCard = makeCard();
-  workCard.innerHTML = `<div class="section-icon icon-work">🔧</div>
+  workCard.innerHTML = `<div class="section-icon icon-work">${ICONS.wrench}</div>
     <div class="section-label">Work Completed Today</div>
     <div class="section-content">${listOrText(r.work_done)}</div>`;
   grid.appendChild(workCard);
 
   const issueCard = makeCard();
-  issueCard.innerHTML = `<div class="section-icon icon-issue">⚠️</div>
+  issueCard.innerHTML = `<div class="section-icon icon-issue">${ICONS.alert}</div>
     <div class="section-label">Issues & Blockers</div>
     <div class="section-content">${r.issues && r.issues.length ? listOrText(r.issues) : '<span style="color:var(--muted)">No issues reported</span>'}</div>`;
   grid.appendChild(issueCard);
 
   const wxCard = makeCard();
   const wx = r.weather || {};
-  wxCard.innerHTML = `<div class="section-icon icon-weather">🌤️</div>
+  wxCard.innerHTML = `<div class="section-icon icon-weather">${ICONS.cloudSun}</div>
     <div class="section-label">Weather Conditions</div>
     <div class="section-content">
       <div class="weather-row">
         ${wx.conditions ? `<div class="weather-chip">${wx.conditions}</div>` : ''}
-        ${wx.temperature ? `<div class="weather-chip">🌡 ${wx.temperature}</div>` : ''}
-        ${wx.humidity ? `<div class="weather-chip">💧 ${wx.humidity}</div>` : ''}
-        ${wx.wind ? `<div class="weather-chip">💨 ${wx.wind}</div>` : ''}
+        ${wx.temperature ? `<div class="weather-chip">${ICONS.thermometer} ${wx.temperature}</div>` : ''}
+        ${wx.humidity ? `<div class="weather-chip">${ICONS.droplet} ${wx.humidity}</div>` : ''}
+        ${wx.wind ? `<div class="weather-chip">${ICONS.wind} ${wx.wind}</div>` : ''}
       </div>
       ${wx.impact ? `<p style="margin-top:8px;color:var(--light);font-size:0.83rem">${wx.impact}</p>` : ''}
-      ${gpsCoords ? `<p style="margin-top:6px;font-family:var(--mono);font-size:0.68rem;color:var(--muted)">📍 ${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lon.toFixed(4)}</p>` : ''}
+      ${gpsCoords ? `<p style="margin-top:6px;font-family:var(--mono);font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:4px">${ICONS.mapPin} ${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lon.toFixed(4)}</p>` : ''}
     </div>`;
   grid.appendChild(wxCard);
 
   const nextCard = makeCard();
-  nextCard.innerHTML = `<div class="section-icon icon-next">→</div>
+  nextCard.innerHTML = `<div class="section-icon icon-next">${ICONS.arrowRight}</div>
     <div class="section-label">Next Steps</div>
     <div class="section-content">${listOrText(r.next_steps)}</div>`;
   grid.appendChild(nextCard);
@@ -1184,8 +1223,8 @@ function renderReport(r) {
     const extra = makeCard('full');
     extra.innerHTML = `<div class="section-label">Additional Notes</div>
       <div class="section-content" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        ${r.workforce_notes ? `<div><strong style="color:var(--light);font-size:0.78rem">👷 Workforce</strong><p style="margin-top:4px">${r.workforce_notes}</p></div>` : ''}
-        ${r.materials_notes ? `<div><strong style="color:var(--light);font-size:0.78rem">📦 Materials</strong><p style="margin-top:4px">${r.materials_notes}</p></div>` : ''}
+        ${r.workforce_notes ? `<div><strong style="color:var(--light);font-size:0.78rem;display:inline-flex;align-items:center;gap:4px">${ICONS.hardHat} Workforce</strong><p style="margin-top:4px">${r.workforce_notes}</p></div>` : ''}
+        ${r.materials_notes ? `<div><strong style="color:var(--light);font-size:0.78rem;display:inline-flex;align-items:center;gap:4px">${ICONS.package} Materials</strong><p style="margin-top:4px">${r.materials_notes}</p></div>` : ''}
       </div>`;
     grid.appendChild(extra);
   }
