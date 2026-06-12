@@ -1,5 +1,5 @@
-// SiteLog Service Worker v1
-const CACHE = 'sitelog-v1';
+// SiteLog Service Worker v2
+const CACHE = 'sitelog-v2';
 const STATIC = [
   './',
   './index.html',
